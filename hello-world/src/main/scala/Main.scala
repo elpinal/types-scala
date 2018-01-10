@@ -4,5 +4,11 @@ case object Int extends Type
 case class Arr(ty1: Type, ty2: Type) extends Type
 
 object Main extends App {
-  println("Hello, Scala!")
+        val subst: (String => Type, Type) => Type = (s: String => Type, ty: Type) => ty match {
+                case Var(i) => s(i)
+                case Int => Int
+                case Arr(ty1, ty2) => Arr(subst(s, ty1), subst(s, ty2))
+        }
+
+        println("Hello, Scala!")
 }
