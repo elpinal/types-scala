@@ -83,7 +83,11 @@ object ConstraintTyping {
     (v, cs1 ++ cs2 ++ c)
   }
 
-  private def freshVar() = Type.Var(s"v$count")
+  private def freshVar() = {
+    val n = count
+    count += 1
+    Type.Var(s"v$n")
+  }
 }
 
 object Main extends App {
