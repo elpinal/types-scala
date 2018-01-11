@@ -18,4 +18,11 @@ class MainTest extends FunSuite {
     val cs = Constraint.set(Type.Var("B") -> Type.Arr(Type.Var("A"), Type.Var("v0")))
     assert(ConstraintTyping.getTypeAndConstraint(ctx, t) == Right(ty, cs))
   }
+
+  test("unify Set of Constraint") {
+    val t = Type.Arr(Type.Var("A"), Type.Var("v0"))
+    val cs = Constraint.set(Type.Var("B") -> t)
+    val s = Subst(Map("B" -> t))
+    assert(Constraint.unify(cs) == Right(s))
+  }
 }
