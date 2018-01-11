@@ -45,12 +45,45 @@ case class Context(l: List[Type.Type]) extends Types[Context] {
 
   def has(n: Int) = l isDefinedAt n
   def get(n: Int) = l apply n
+  def add(ty: Type.Type) = Context(ty :: l)
 }
 
 object Constraint {
   case class Constraint(ty1: Type.Type, ty2: Type.Type)
 
   def set(cs: (Type.Type, Type.Type)*) = cs.map({case (ty1, ty2) => Constraint(ty1, ty2)}).toSet
+
+  def empty = set()
+}
+
+object ConstraintTyping {
+  private var count = 0
+
+  def getTypeAndConstraint(ctx: Context, t: Term.Term): Either[String, (Type.Type, Set[Constraint.Constraint])] = {
+    traverse(ctx, t)
+  }
+
+  def traverse(ctx: Context, t: Term.Term): Either[String, (Type.Type, Set[Constraint.Constraint])] = {
+    t match {
+      case Term.Var(n) if ctx.has(n) => Right((ctx.get(n), Constraint.empty))
+      case Term.Var(n) => Left(s"no such variable in context: $n")
+      case Term.Abs(ty, t) => traverse(ctx add ty, t).map({case (ty1, cs) => (Type.Arr(ty, ty1), cs)})
+      case Term.App(t1, t2) => for {
+        r1 <- traverse(ctx, t1)
+        r2 <- traverse(ctx, t2)
+      } yield app(r1, r2)
+    }
+  }
+
+  def app(r1: (Type.Type, Set[Constraint.Constraint]), r2: (Type.Type, Set[Constraint.Constraint])) = {
+    val v = freshVar()
+    val (ty1, cs1) = r1
+    val (ty2, cs2) = r2
+    val c = Constraint.set(ty1 -> Type.Arr(ty2, v))
+    (v, cs1 ++ cs2 ++ c)
+  }
+
+  private def freshVar() = Type.Var(s"v$count")
 }
 
 object Main extends App {
@@ -80,4 +113,39 @@ object Main extends App {
   println("constraint", Constraint.set(Type.Int -> Type.Int))
   println("constraint", Constraint.set(Type.Int -> Type.Int, Type.Int -> Type.Int))
   println("constraint", Constraint.set(Type.Int -> Type.Int, Type.Int -> Type.Var("x")))
+
+  val ctx = Context(List())
+
+  {
+    val t = Term.Var(0)
+    println("typing", ConstraintTyping.getTypeAndConstraint(ctx, t))
+
+    {
+      val ctx = Context(List(Type.Var("X")))
+      println("typing", ConstraintTyping.getTypeAndConstraint(ctx, t))
+    }
+  }
+
+  {
+    val t = Term.Abs(Type.Int, Term.Var(0))
+    println("typing", ConstraintTyping.getTypeAndConstraint(ctx, t))
+  }
+
+  {
+    val t = Term.Abs(Type.Var("X"), Term.Var(0))
+    println("typing", ConstraintTyping.getTypeAndConstraint(ctx, t))
+  }
+
+  {
+    val t = Term.Abs(Type.Var("X"), Term.Var(0))
+    val t1 = Term.App(t, t)
+    println("typing", ConstraintTyping.getTypeAndConstraint(ctx, t1))
+  }
+
+  {
+    val ctx = Context(List(Type.Var("Y")))
+    val t = Term.Abs(Type.Var("X"), Term.Var(0))
+    val t1 = Term.App(t, Term.Var(0))
+    println("typing", ConstraintTyping.getTypeAndConstraint(ctx, t1))
+  }
 }
