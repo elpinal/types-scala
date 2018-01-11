@@ -44,6 +44,12 @@ case class Context(l: List[Type.Type]) extends Types[Context] {
     Context(l.map(ty => ty.subst(s)))
 }
 
+object Constraint {
+  case class Constraint(ty1: Type.Type, ty2: Type.Type)
+
+  def set(cs: (Type.Type, Type.Type)*) = cs.map({case (ty1, ty2) => Constraint(ty1, ty2)}).toSet
+}
+
 object Main extends App {
   println("Hello, Scala!")
 
@@ -66,4 +72,9 @@ object Main extends App {
   println("[x->y] . [y->z]", s1.compoeseSubst(s2))
   println("[x->y] . [x->z]", s1.compoeseSubst(s3))
   println("[y->z] . [x->y]", s2.compoeseSubst(s1))
+
+  println("constraint", Constraint.set())
+  println("constraint", Constraint.set(Type.Int -> Type.Int))
+  println("constraint", Constraint.set(Type.Int -> Type.Int, Type.Int -> Type.Int))
+  println("constraint", Constraint.set(Type.Int -> Type.Int, Type.Int -> Type.Var("x")))
 }
