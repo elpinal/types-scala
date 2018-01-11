@@ -9,12 +9,26 @@ case class Subst(m: Map[String, Type.Type]) {
     Subst(m ++ s.m.mapValues(t => t.subst(this)))
 }
 
+object Subst {
+  def empty = Subst(Map())
+}
+
 object Type {
   sealed abstract class Type extends Types[Type] {
     def subst(s: Subst): Type = this match {
       case Var(i) => s.getOrElse(i, this)
       case Int => Int
       case Arr(ty1, ty2) => Arr(ty1.subst(s), ty2.subst(s))
+    }
+
+    def fromVar() = this match {
+      case Var(i) => Some(i)
+      case _ => None
+    }
+
+    def fromArr() = this match {
+      case Arr(ty1, ty2) => Some(ty1 -> ty2)
+      case _ => None
     }
   }
 
@@ -49,11 +63,36 @@ case class Context(l: List[Type.Type]) extends Types[Context] {
 }
 
 object Constraint {
-  case class Constraint(ty1: Type.Type, ty2: Type.Type)
+  case class Constraint(ty1: Type.Type, ty2: Type.Type) extends Types[Constraint] {
+    def subst(s: Subst): Constraint =
+      Constraint(ty1.subst(s), ty1.subst(s))
+  }
 
   def set(cs: (Type.Type, Type.Type)*) = cs.map({case (ty1, ty2) => Constraint(ty1, ty2)}).toSet
 
   def empty = set()
+
+  def unify(cs: Set[Constraint]): Either[String, Subst] = {
+    cs.headOption map { case Constraint(s, t) =>
+      if (s == t) {
+        unify(cs.tail)
+      } else {
+        varBind(cs, s, t) orElse varBind(cs, t, s) orElse arrBind(cs, s, t) getOrElse Left(s"cannor unify: $s and $t")
+      }
+    } getOrElse Right(Subst.empty)
+  }
+
+  def varBind(cs: Set[Constraint], ty1: Type.Type, ty2: Type.Type) =
+    ty1.fromVar() map { v =>
+      val sub = Subst(Map(v -> ty2))
+      unify(cs.tail map { _.subst(sub) }) map { _.compoeseSubst(sub) }
+    }
+
+  def arrBind(cs: Set[Constraint], tyS: Type.Type, tyT: Type.Type) =
+    for {
+      (tyS1, tyS2) <- tyS.fromArr()
+      (tyT1, tyT2) <- tyT.fromArr()
+    } yield unify(cs.tail + Constraint(tyS1, tyT1) + Constraint(tyS2, tyT2))
 }
 
 object ConstraintTyping {
