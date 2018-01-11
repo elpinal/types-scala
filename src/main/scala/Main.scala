@@ -42,6 +42,9 @@ object Term {
 case class Context(l: List[Type.Type]) extends Types[Context] {
   def subst(s: Subst): Context =
     Context(l.map(ty => ty.subst(s)))
+
+  def has(n: Int) = l isDefinedAt n
+  def get(n: Int) = l apply n
 }
 
 object Constraint {
