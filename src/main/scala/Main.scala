@@ -6,7 +6,7 @@ case class Subst(m: Map[String, Type.Type]) {
   def getOrElse(i: String, x: Type.Type) = m getOrElse (i, x)
 
   def compoeseSubst(s: Subst) =
-    Subst(m ++ s.m.mapValues((t: Type.Type) => t.subst(this)))
+    Subst(m ++ s.m.mapValues(t => t.subst(this)))
 }
 
 object Type {
@@ -41,7 +41,7 @@ object Term {
 
 case class Context(l: List[Type.Type]) extends Types[Context] {
   def subst(s: Subst): Context =
-    Context(l.map({ty => ty.subst(s)}))
+    Context(l.map(ty => ty.subst(s)))
 }
 
 object Main extends App {
