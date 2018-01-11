@@ -32,9 +32,9 @@ object Term {
   case class Ann(t: Term, ty: Type.Type) extends Term
 }
 
-case class Context(l: List[(Term.Term, Type.Type)]) extends Types[Context] {
+case class Context(l: List[Type.Type]) extends Types[Context] {
   def subst(s: String => Type.Type): Context =
-    Context(l.map({case (t, ty) => (t.subst(s), ty.subst(s))}))
+    Context(l.map({ty => ty.subst(s)}))
 }
 
 object Main extends App {
@@ -48,5 +48,5 @@ object Main extends App {
   println("λ.0", Term.Abs(Term.Var(0)))
   println("0 1", Term.App(Term.Var(0), Term.Var(1)))
 
-  println("context", Context(List((Term.Var(0), Type.Int))))
+  println("context", Context(List(Type.Int)))
 }
