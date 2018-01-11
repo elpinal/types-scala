@@ -57,36 +57,39 @@ object Constraint {
 }
 
 object ConstraintTyping {
-  private var count = 0
-
   def getTypeAndConstraint(ctx: Context, t: Term.Term): Either[String, (Type.Type, Set[Constraint.Constraint])] = {
-    traverse(ctx, t)
+    val i = new Internal()
+    i.traverse(ctx, t)
   }
 
-  def traverse(ctx: Context, t: Term.Term): Either[String, (Type.Type, Set[Constraint.Constraint])] = {
-    t match {
-      case Term.Var(n) if ctx.has(n) => Right((ctx.get(n), Constraint.empty))
-      case Term.Var(n) => Left(s"no such variable in context: $n")
-      case Term.Abs(ty, t) => traverse(ctx add ty, t).map({case (ty1, cs) => (Type.Arr(ty, ty1), cs)})
-      case Term.App(t1, t2) => for {
-        r1 <- traverse(ctx, t1)
-        r2 <- traverse(ctx, t2)
-      } yield app(r1, r2)
+  class Internal {
+    private var count = 0
+
+    def traverse(ctx: Context, t: Term.Term): Either[String, (Type.Type, Set[Constraint.Constraint])] = {
+      t match {
+        case Term.Var(n) if ctx.has(n) => Right((ctx.get(n), Constraint.empty))
+        case Term.Var(n) => Left(s"no such variable in context: $n")
+        case Term.Abs(ty, t) => traverse(ctx add ty, t).map({case (ty1, cs) => (Type.Arr(ty, ty1), cs)})
+        case Term.App(t1, t2) => for {
+          r1 <- traverse(ctx, t1)
+          r2 <- traverse(ctx, t2)
+        } yield app(r1, r2)
+      }
     }
-  }
 
-  def app(r1: (Type.Type, Set[Constraint.Constraint]), r2: (Type.Type, Set[Constraint.Constraint])) = {
-    val v = freshVar()
-    val (ty1, cs1) = r1
-    val (ty2, cs2) = r2
-    val c = Constraint.set(ty1 -> Type.Arr(ty2, v))
-    (v, cs1 ++ cs2 ++ c)
-  }
+    def app(r1: (Type.Type, Set[Constraint.Constraint]), r2: (Type.Type, Set[Constraint.Constraint])) = {
+      val v = freshVar()
+      val (ty1, cs1) = r1
+      val (ty2, cs2) = r2
+      val c = Constraint.set(ty1 -> Type.Arr(ty2, v))
+      (v, cs1 ++ cs2 ++ c)
+    }
 
-  private def freshVar() = {
-    val n = count
-    count += 1
-    Type.Var(s"v$n")
+    private def freshVar() = {
+      val n = count
+      count += 1
+      Type.Var(s"v$n")
+    }
   }
 }
 
