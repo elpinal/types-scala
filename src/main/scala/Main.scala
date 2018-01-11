@@ -2,6 +2,11 @@ trait Types[T] {
   def subst(s: String => Type.Type): T
 }
 
+object Subst {
+  def compoeseSubst(s1: String => Type.Type, s2: String => Type.Type) =
+    (i: String) => s2(i).subst(s1)
+}
+
 object Type {
   sealed abstract class Type extends Types[Type] {
     def subst(s: String => Type): Type = this match {
@@ -49,4 +54,6 @@ object Main extends App {
   println("0 1", Term.App(Term.Var(0), Term.Var(1)))
 
   println("context", Context(List(Type.Int)))
+
+  println("[x->y]x", Type.Var("x").subst({case "x" => Type.Var("y")}))
 }
