@@ -1,16 +1,18 @@
 trait Types[T] {
-  def subst(s: String => Type.Type): T
+  def subst(s: Subst): T
 }
 
-object Subst {
-  def compoeseSubst(s1: String => Type.Type, s2: String => Type.Type) =
-    (i: String) => s2(i).subst(s1)
+case class Subst(m: Map[String, Type.Type]) {
+  def getOrElse(i: String, x: Type.Type) = m getOrElse (i, x)
+
+  def compoeseSubst(s: Subst) =
+    Subst(m ++ s.m.mapValues((t: Type.Type) => t.subst(this)))
 }
 
 object Type {
   sealed abstract class Type extends Types[Type] {
-    def subst(s: String => Type): Type = this match {
-      case Var(i) => s(i)
+    def subst(s: Subst): Type = this match {
+      case Var(i) => s.getOrElse(i, this)
       case Int => Int
       case Arr(ty1, ty2) => Arr(ty1.subst(s), ty2.subst(s))
     }
@@ -23,7 +25,7 @@ object Type {
 
 object Term {
   sealed abstract class Term extends Types[Term] {
-    def subst(s: String => Type.Type): Term = this match {
+    def subst(s: Subst): Term = this match {
       case Var(i) => this
       case Abs(t) => t.subst(s)
       case App(t1, t2) => App(t1.subst(s), t2.subst(s))
@@ -38,7 +40,7 @@ object Term {
 }
 
 case class Context(l: List[Type.Type]) extends Types[Context] {
-  def subst(s: String => Type.Type): Context =
+  def subst(s: Subst): Context =
     Context(l.map({ty => ty.subst(s)}))
 }
 
@@ -55,5 +57,13 @@ object Main extends App {
 
   println("context", Context(List(Type.Int)))
 
-  println("[x->y]x", Type.Var("x").subst({case "x" => Type.Var("y")}))
+  println("[x->y]x", Type.Var("x").subst(Subst(Map("x" -> Type.Var("y")))))
+  println("[y->y]x", Type.Var("x").subst(Subst(Map("y" -> Type.Var("y")))))
+
+  val s1 = Subst(Map("x" -> Type.Var("y")))
+  val s2 = Subst(Map("y" -> Type.Var("z")))
+  val s3 = Subst(Map("x" -> Type.Var("z")))
+  println("[x->y] . [y->z]", s1.compoeseSubst(s2))
+  println("[x->y] . [x->z]", s1.compoeseSubst(s3))
+  println("[y->z] . [x->y]", s2.compoeseSubst(s1))
 }
