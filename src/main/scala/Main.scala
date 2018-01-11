@@ -26,14 +26,14 @@ object Type {
 object Term {
   sealed abstract class Term extends Types[Term] {
     def subst(s: Subst): Term = this match {
-      case Var(i) => this
+      case Var(n) => this
       case Abs(t) => t.subst(s)
       case App(t1, t2) => App(t1.subst(s), t2.subst(s))
       case Ann(t, ty) => Ann(t.subst(s), ty.subst(s))
     }
   }
 
-  case class Var(x: Int) extends Term
+  case class Var(n: Int) extends Term
   case class Abs(t: Term) extends Term
   case class App(t1: Term, t2: Term) extends Term
   case class Ann(t: Term, ty: Type.Type) extends Term
