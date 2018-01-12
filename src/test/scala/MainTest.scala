@@ -27,7 +27,7 @@ class MainTest extends PropSpec with TableDrivenPropertyChecks with Matchers {
 
   property("ConstraintTyping.getTypeAndConstraint") {
     val ctx = Context(List(Type.Var("A")))
-    val t = Term.Abs(Type.Var("B"), Term.App(Term.Var(0), Term.Var(1)))
+    val t = Term.abs(Type.Var("B"), Term.App(Term.Var(0), Term.Var(1)))
     val ty = Type.Arr(Type.Var("B"), Type.Var("v0"))
     val cs =
       Constraint.set(Type.Var("B") -> Type.Arr(Type.Var("A"), Type.Var("v0")))
@@ -43,8 +43,8 @@ class MainTest extends PropSpec with TableDrivenPropertyChecks with Matchers {
 
   property("PrincipalType.fromTermWithContext") {
     val t = Term.App(
-      Term.Abs(Type.Var("X"), Term.Var(0)),
-      Term.Abs(Type.Var("Y"), Term.Var(0))
+      Term.abs(Type.Var("X"), Term.Var(0)),
+      Term.abs(Type.Var("Y"), Term.Var(0))
     )
     val ctx = Context(List())
     val tyYY = Type.Arr(Type.Var("Y"), Type.Var("Y"))
@@ -63,13 +63,13 @@ class MainTest extends PropSpec with TableDrivenPropertyChecks with Matchers {
         ("ctx", "t", "s", "ty"),
         (ctx, t, s, ty),
         (ctx,
-         Term.Abs(Type.Var("X"), Term.Var(0)),
+         Term.abs(Type.Var("X"), Term.Var(0)),
          Subst.empty,
          Type.Arr(Type.Var("X"), Type.Var("X"))),
         (Context(List(Type.Int)),
-         Term.Abs(
+         Term.abs(
            Type.Var("ZZ"),
-           Term.Abs(Type.Var("YY"),
+           Term.abs(Type.Var("YY"),
                     Term.App(Term.Var(1), Term.App(Term.Var(0), Term.Var(2))))),
          Subst(
            Map(
