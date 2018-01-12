@@ -73,11 +73,12 @@ object Constraint {
   def empty = set()
 
   def unify(cs: Set[Constraint]): Either[String, Subst] = {
+    val rest = cs drop 1
     cs.headOption map { case Constraint(s, t) =>
       if (s == t) {
-        unify(cs.tail)
+        unify(rest)
       } else {
-        varBind(cs, s, t) orElse varBind(cs, t, s) orElse arrBind(cs, s, t) getOrElse Left(s"cannor unify: $s and $t")
+        varBind(rest, s, t) orElse varBind(rest, t, s) orElse arrBind(rest, s, t) getOrElse Left(s"cannor unify: $s and $t")
       }
     } getOrElse Right(Subst.empty)
   }
@@ -85,14 +86,14 @@ object Constraint {
   def varBind(cs: Set[Constraint], ty1: Type.Type, ty2: Type.Type) =
     ty1.fromVar() map { v =>
       val sub = Subst(Map(v -> ty2))
-      unify(cs.tail map { _.subst(sub) }) map { _.compoeseSubst(sub) }
+      unify(cs map { _.subst(sub) }) map { _.compoeseSubst(sub) }
     }
 
   def arrBind(cs: Set[Constraint], tyS: Type.Type, tyT: Type.Type) =
     for {
       (tyS1, tyS2) <- tyS.fromArr()
       (tyT1, tyT2) <- tyT.fromArr()
-    } yield unify(cs.tail + Constraint(tyS1, tyT1) + Constraint(tyS2, tyT2))
+    } yield unify(cs + Constraint(tyS1, tyT1) + Constraint(tyS2, tyT2))
 }
 
 object ConstraintTyping {

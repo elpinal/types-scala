@@ -76,3 +76,5 @@ libraryDependencies += "org.scalatest" %% "scalatest" % "3.0.4" % "test"
 // To learn more about multi-project builds, head over to the official sbt
 // documentation at http://www.scala-sbt.org/documentation.html
 
+wartremoverErrors in (Compile, compile) ++= Warts.unsafe
+wartremoverErrors in (Compile, compile) -= Wart.Var // Since there is no State Monad.
