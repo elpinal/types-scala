@@ -46,11 +46,39 @@ class MainTest extends PropSpec with TableDrivenPropertyChecks with Matchers {
     )
     val ctx = Context(List())
     val tyYY = Type.Arr(Type.Var("Y"), Type.Var("Y"))
-    val s = Subst(Map(
-      "X" -> tyYY,
-      "v0" -> tyYY
+    val s = Subst(
+      Map(
+        "X" -> tyYY,
+        "v0" -> tyYY
       ))
     val ty = tyYY
-    assert(PrincipalType.fromTermWithContext(ctx, t) == Right((s, ty)))
+
+    val tyArrv0v1 = Type.Arr(Type.Var("v0"), Type.Var("v1"))
+    val tyArrIntv0 = Type.Arr(Type.Int, Type.Var("v0"))
+
+    val examples =
+      Table(
+        ("ctx", "t", "s", "ty"),
+        (ctx, t, s, ty),
+        (ctx,
+         Term.Abs(Type.Var("X"), Term.Var(0)),
+         Subst.empty,
+         Type.Arr(Type.Var("X"), Type.Var("X"))),
+        (Context(List(Type.Int)),
+         Term.Abs(
+           Type.Var("ZZ"),
+           Term.Abs(Type.Var("YY"),
+                    Term.App(Term.Var(1), Term.App(Term.Var(0), Term.Var(2))))),
+         Subst(
+           Map(
+             "ZZ" -> tyArrv0v1,
+             "YY" -> tyArrIntv0,
+           )),
+         Type.Arr(tyArrv0v1, Type.Arr(tyArrIntv0, Type.Var("v1"))))
+      )
+    forAll(examples) {
+      case (ctx, t, s, ty) =>
+        assert(PrincipalType.fromTermWithContext(ctx, t) == Right((s, ty)))
+    }
   }
 }
