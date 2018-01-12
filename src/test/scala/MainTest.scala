@@ -19,8 +19,9 @@ class MainTest extends PropSpec with TableDrivenPropertyChecks with Matchers {
         )
       )
 
-    forAll(examples) { case (t1, s, t2) =>
-      t1.subst(s) should be (t2)
+    forAll(examples) {
+      case (t1, s, t2) =>
+        t1.subst(s) should be(t2)
     }
   }
 
@@ -28,7 +29,8 @@ class MainTest extends PropSpec with TableDrivenPropertyChecks with Matchers {
     val ctx = Context(List(Type.Var("A")))
     val t = Term.Abs(Type.Var("B"), Term.App(Term.Var(0), Term.Var(1)))
     val ty = Type.Arr(Type.Var("B"), Type.Var("v0"))
-    val cs = Constraint.set(Type.Var("B") -> Type.Arr(Type.Var("A"), Type.Var("v0")))
+    val cs =
+      Constraint.set(Type.Var("B") -> Type.Arr(Type.Var("A"), Type.Var("v0")))
     assert(ConstraintTyping.getTypeAndConstraint(ctx, t) == Right(ty, cs))
   }
 
