@@ -16,19 +16,19 @@ object Subst {
 object Type {
   sealed abstract class Type extends Types[Type] {
     def subst(s: Subst): Type = this match {
-      case Var(i) => s.getOrElse(i, this)
-      case Int => Int
+      case Var(i)        => s.getOrElse(i, this)
+      case Int           => Int
       case Arr(ty1, ty2) => Arr(ty1.subst(s), ty2.subst(s))
     }
 
     def fromVar() = this match {
       case Var(i) => Some(i)
-      case _ => None
+      case _      => None
     }
 
     def fromArr() = this match {
       case Arr(ty1, ty2) => Some(ty1 -> ty2)
-      case _ => None
+      case _             => None
     }
   }
 
@@ -40,10 +40,10 @@ object Type {
 object Term {
   sealed abstract class Term extends Types[Term] {
     def subst(s: Subst): Term = this match {
-      case Var(n) => this
-      case Abs(ty, t) => Abs(ty.subst(s), t.subst(s))
+      case Var(n)      => this
+      case Abs(ty, t)  => Abs(ty.subst(s), t.subst(s))
       case App(t1, t2) => App(t1.subst(s), t2.subst(s))
-      case Ann(t, ty) => Ann(t.subst(s), ty.subst(s))
+      case Ann(t, ty)  => Ann(t.subst(s), ty.subst(s))
     }
   }
 
@@ -63,23 +63,29 @@ case class Context(l: List[Type.Type]) extends Types[Context] {
 }
 
 object Constraint {
-  case class Constraint(ty1: Type.Type, ty2: Type.Type) extends Types[Constraint] {
+  case class Constraint(ty1: Type.Type, ty2: Type.Type)
+      extends Types[Constraint] {
     def subst(s: Subst): Constraint =
       Constraint(ty1.subst(s), ty2.subst(s))
   }
 
-  def set(cs: (Type.Type, Type.Type)*) = cs.map({case (ty1, ty2) => Constraint(ty1, ty2)}).toSet
+  def set(cs: (Type.Type, Type.Type)*) =
+    cs.map({ case (ty1, ty2) => Constraint(ty1, ty2) }).toSet
 
   def empty = set()
 
   def unify(cs: Set[Constraint]): Either[String, Subst] = {
     val rest = cs drop 1
-    cs.headOption map { case Constraint(s, t) =>
-      if (s == t) {
-        unify(rest)
-      } else {
-        varBind(rest, s, t) orElse varBind(rest, t, s) orElse arrBind(rest, s, t) getOrElse Left(s"cannor unify: $s and $t")
-      }
+    cs.headOption map {
+      case Constraint(s, t) =>
+        if (s == t) {
+          unify(rest)
+        } else {
+          varBind(rest, s, t) orElse varBind(rest, t, s) orElse arrBind(
+            rest,
+            s,
+            t) getOrElse Left(s"cannor unify: $s and $t")
+        }
     } getOrElse Right(Subst.empty)
   }
 
@@ -97,7 +103,9 @@ object Constraint {
 }
 
 object ConstraintTyping {
-  def getTypeAndConstraint(ctx: Context, t: Term.Term): Either[String, (Type.Type, Set[Constraint.Constraint])] = {
+  def getTypeAndConstraint(
+      ctx: Context,
+      t: Term.Term): Either[String, (Type.Type, Set[Constraint.Constraint])] = {
     val i = new Internal()
     i.traverse(ctx, t)
   }
@@ -105,19 +113,25 @@ object ConstraintTyping {
   class Internal {
     private var count = 0
 
-    def traverse(ctx: Context, t: Term.Term): Either[String, (Type.Type, Set[Constraint.Constraint])] = {
+    def traverse(ctx: Context, t: Term.Term)
+      : Either[String, (Type.Type, Set[Constraint.Constraint])] = {
       t match {
         case Term.Var(n) if ctx.has(n) => Right((ctx.get(n), Constraint.empty))
-        case Term.Var(n) => Left(s"no such variable in context: $n")
-        case Term.Abs(ty, t) => traverse(ctx add ty, t).map({case (ty1, cs) => (Type.Arr(ty, ty1), cs)})
-        case Term.App(t1, t2) => for {
-          r1 <- traverse(ctx, t1)
-          r2 <- traverse(ctx, t2)
-        } yield app(r1, r2)
+        case Term.Var(n)               => Left(s"no such variable in context: $n")
+        case Term.Abs(ty, t) =>
+          traverse(ctx add ty, t).map({
+            case (ty1, cs) => (Type.Arr(ty, ty1), cs)
+          })
+        case Term.App(t1, t2) =>
+          for {
+            r1 <- traverse(ctx, t1)
+            r2 <- traverse(ctx, t2)
+          } yield app(r1, r2)
       }
     }
 
-    def app(r1: (Type.Type, Set[Constraint.Constraint]), r2: (Type.Type, Set[Constraint.Constraint])) = {
+    def app(r1: (Type.Type, Set[Constraint.Constraint]),
+            r2: (Type.Type, Set[Constraint.Constraint])) = {
       val v = freshVar()
       val (ty1, cs1) = r1
       val (ty2, cs2) = r2
@@ -135,10 +149,11 @@ object ConstraintTyping {
 
 object PrincipalType {
   def fromTermWithContext(ctx: Context, t: Term.Term) =
-    ConstraintTyping.getTypeAndConstraint(ctx, t) flatMap { case (ty, cs) =>
-      Constraint.unify(cs) map { s =>
-        (s, ty.subst(s))
-      }
+    ConstraintTyping.getTypeAndConstraint(ctx, t) flatMap {
+      case (ty, cs) =>
+        Constraint.unify(cs) map { s =>
+          (s, ty.subst(s))
+        }
     }
 }
 
@@ -167,8 +182,10 @@ object Main extends App {
 
   println("constraint", Constraint.set())
   println("constraint", Constraint.set(Type.Int -> Type.Int))
-  println("constraint", Constraint.set(Type.Int -> Type.Int, Type.Int -> Type.Int))
-  println("constraint", Constraint.set(Type.Int -> Type.Int, Type.Int -> Type.Var("x")))
+  println("constraint",
+          Constraint.set(Type.Int -> Type.Int, Type.Int -> Type.Int))
+  println("constraint",
+          Constraint.set(Type.Int -> Type.Int, Type.Int -> Type.Var("x")))
 
   val ctx = Context(List())
 
