@@ -65,7 +65,7 @@ case class Context(l: List[Type.Type]) extends Types[Context] {
 object Constraint {
   case class Constraint(ty1: Type.Type, ty2: Type.Type) extends Types[Constraint] {
     def subst(s: Subst): Constraint =
-      Constraint(ty1.subst(s), ty1.subst(s))
+      Constraint(ty1.subst(s), ty2.subst(s))
   }
 
   def set(cs: (Type.Type, Type.Type)*) = cs.map({case (ty1, ty2) => Constraint(ty1, ty2)}).toSet
