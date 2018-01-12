@@ -76,7 +76,11 @@ class MainTest extends PropSpec with TableDrivenPropertyChecks with Matchers {
              "ZZ" -> tyArrv0v1,
              "YY" -> tyArrIntv0,
            )),
-         Type.Arr(tyArrv0v1, Type.Arr(tyArrIntv0, Type.Var("v1"))))
+         Type.Arr(tyArrv0v1, Type.Arr(tyArrIntv0, Type.Var("v1")))),
+        (ctx,
+         Term.Abs(None, Term.App(Term.Var(0), Term.Var(0))),
+         Subst(Map("v0" -> Type.Arr(Type.Var("v0"), Type.Var("v1")))),
+         Type.Arr(Type.Arr(Type.Var("v0"), Type.Var("v1")), Type.Var("v1")))
       )
     forAll(examples) {
       case (ctx, t, s, ty) =>
