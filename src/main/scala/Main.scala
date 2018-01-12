@@ -132,6 +132,15 @@ object ConstraintTyping {
   }
 }
 
+object PrincipalType {
+  def fromTermWithContext(ctx: Context, t: Term.Term) =
+    ConstraintTyping.getTypeAndConstraint(ctx, t) flatMap { case (ty, cs) =>
+      Constraint.unify(cs) map { s =>
+        (s, ty.subst(s))
+      }
+    }
+}
+
 object Main extends App {
   println("Hello, Scala!")
 

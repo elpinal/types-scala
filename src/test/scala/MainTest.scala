@@ -9,6 +9,10 @@ class MainTest extends FunSuite {
 
     val t = Type.Var("Z")
     assert(t.subst(s) == t)
+
+    val t0 = Type.Var("v0")
+    val s1 = Subst(Map("X" -> Type.Arr(Type.Var("X"), Type.Var("X"))))
+    assert(t0.subst(s1) == t0)
   }
 
   test("ConstraintTyping.getTypeAndConstraint") {
@@ -24,5 +28,20 @@ class MainTest extends FunSuite {
     val cs = Constraint.set(Type.Var("B") -> t)
     val s = Subst(Map("B" -> t))
     assert(Constraint.unify(cs) == Right(s))
+  }
+
+  test("PrincipalType.fromTermWithContext") {
+    val t = Term.App(
+      Term.Abs(Type.Var("X"), Term.Var(0)),
+      Term.Abs(Type.Var("Y"), Term.Var(0))
+    )
+    val ctx = Context(List())
+    val tyYY = Type.Arr(Type.Var("Y"), Type.Var("Y"))
+    val s = Subst(Map(
+      "X" -> tyYY,
+      "v0" -> tyYY
+      ))
+    val ty = tyYY
+    assert(PrincipalType.fromTermWithContext(ctx, t) == Right((s, ty)))
   }
 }
